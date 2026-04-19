@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Rust Wasm Multi-threading</title>
+  <link href="style/bootstrap/bootstrap.min.css" rel="stylesheet" />
+  <link href="style/fontawesome/css/fontawesome.min.css" rel="stylesheet" />
+  <link href="style/fontawesome/css/solid.min.css" rel="stylesheet" />
+  <link href="style/common.css" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+</head>
+
+<body data-bs-theme="light">
+  <script src="libs/vue.global.prod.min.js"></script>
+  <div id="app"></div>
+  <script type="module" src="worker.js"></script>
+  <script type="module">
+    import init, {
+      initThreadPool,
+      sum_blocking,
+      sum_async_promise,
+      parallel_sum_blocking,
+      parallel_sum_async_promise
+    } from './pkg/mt_wasm.js';
+
+    const _collection = Array.from({ length: 10000 }, (_, i) => i + 1);
+    const _numberOfThreads = Math.max(2, Math.trunc(navigator.hardwareConcurrency * 0.4));
+
+    const app = Vue.createApp({
+      template: `
+        <div class="container p-4">
+          <h1 class="mb-2">Rust Wasm Multi-threading</h1>
+          <div class="d-flex gap-2 mb-2">
+            <div class="lead flex-shrink-0 card">
+              <div class="card-body d-flex flex-column gap-1">
+                <div>
+                  WASM MaxThreads: <span v-text="numberOfThreads"></span>
+                </div>
+                <div>
+                  Web Worker WASM Max Threads: <span v-text="numberOfThreads"></span>
+                </div>
+                <div>
+                  Worker Running: <span v-text="workerStarted ? '✅' : '❌'"></span>
+                </div>
+                <div>
+                  Number of iterations: <span v-text="iterations"></span>
+                </div>
+              </div>
+            </div>
+            <div class="card flex-fill">
+              <div class="card-body lead">
+                This is a simple example of using Multi-threading with Rust and WebAssembly. <br />
+                The buttons below will run the same sum function with different implementations and measure the time it takes to complete.  <br />
+                The collection being summed is an array of <span v-text="numberOfEntries"></span> integers.
+              </div>
+            </div>
+          </div>
+          <div class="mb-2">
+            <button type="button" 
+                    class="btn btn-secondary" 
+                    @click="clicks++">
+                    Interaction! (Clicks: <span v-text="clicks"></span>)
+            </button>
+          </div>
+          <div class="d-flex gap-3">
+            <div class="actions flex-shrink-0 d-flex flex-column gap-2">
+              <div class="lead">Run Sum:</div>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'sequentialSumBlocking' }"
+                      @click="sequentialSumBlocking" 
+                      :disabled="busy">
+                      Sequential - Blocking
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'sequentialSumAsyncPromise' }"
+                      @click="sequentialSumAsyncPromise" 
+                      :disabled="busy">
+                      Sequential - Async Promise
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'parallelSumBlocking' }"
+                      @click="parallelSumBlocking" 
+                      :disabled="busy">
+                      Parallel - Blocking
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'parallelSumAsyncPromise' }"
+                      @click="parallelSumAsyncPromise" 
+                      :disabled="busy">
+                      Parallel - Async Promise
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'sumWebWorker' }"
+                      @click="sumWebWorker" 
+                      :disabled="busy || !workerStarted">
+                      Sum - Web Worker
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'parallelSumWebWorker' }"
+                      @click="parallelSumWebWorker" 
+                      :disabled="busy || !workerStarted">
+                      Parallel Sum - Web Worker
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'sumWebWorkerAsync' }"
+                      @click="sumWebWorkerAsync" 
+                      :disabled="busy || !workerStarted">
+                      Sum - Web Worker Async
+              </button>
+              <button type="button" 
+                      class="btn btn-primary mb-2" 
+                      :class="{ active: runType === 'parallelSumWebWorkerAsync' }"
+                      @click="parallelSumWebWorkerAsync" 
+                      :disabled="busy || !workerStarted">
+                      Parallel Sum - Web Worker Async
+              </button>
+            </div>
+            <div class="results flex-fill d-flex flex-column gap-2 overflow-auto" 
+                 v-if="hasResults">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="lead">Result(s):</div>
+                  <button type="button" 
+                          class="btn btn-sm btn-danger" 
+                          @click="clearResults" 
+                          v-if="hasResults"
+                          :disabled="busy">
+                          Clear
+                  </button>
+                </div>
+                <div class="lead" v-for="({ time, result, iteration }) in results" :key="i + '_' + time">
+                  <span v-text="iteration + '. '"></span>
+                  <span v-text="time"></span>
+                  <span v-text="', sum: ' + result"></span>
+                </div>
+            </div>
+          </div>
+        </div>
+        `,
+      data() {
+        return {
+          wasmInitialized: false,
+          worker: null,
+          workerStarted: false,
+          /////////////////////////////////////////
+          clicks: 0,
+          numberOfThreads: _numberOfThreads,
+          numberOfEntries: _collection.length,
+          iterations: 1500,
+          /////////////////////////////////////////
+          runType: '',
+          busy: false,
+          results: []
+        };
+      },
+      async beforeMount() {
+        // initialize WebAssembly and thread pool before the app mounts
+        // for the synchronous blocking version
+        try {
+          await init();
+          await initThreadPool(_numberOfThreads);
+          this.wasmInitialized = true;
+        } catch (error) {
+          console.error('Error initializing WebAssembly:', error);
+        }
+
+        // initialize the Web Worker for the asynchronous versions
+        try {
+          this.worker = new Worker(
+            new URL('./worker.js', import.meta.url),
+            { type: 'module' }
+          );
+          this.worker.onmessage = (event) => {
+            try {
+              const { type, source, result } = event?.data || {};
+
+              if (type === 'RESULT' && source === 'init') {
+                this.workerStarted = result;
+                return;
+              }
+
+              if (type === 'ERROR') {
+                console.error('Worker error:', event);
+                return;
+              }
+
+              const { startTime, iteration } = event.data;
+
+              const endTime = performance.now();
+
+              this.results.unshift({
+                time: this.getTime(endTime, startTime),
+                result: result,
+                iteration
+              });
+            } finally {
+              this.busy = this.busy && this.results.length < this.iterations;
+            }
+          };
+          this.worker.postMessage({
+            type: 'init',
+            numberOfThreads: _numberOfThreads
+          });
+        } catch (error) {
+          console.error('Error initializing Web Worker:', error);
+        }
+      },
+      computed: {
+        hasResults() {
+          return this.results.length > 0;
+        }
+      },
+      methods: {
+        getTime(endTime, startTime) {
+          return `${(endTime - startTime).toFixed(2)} ms`;
+        },
+        clearResults() {
+          this.results = [];
+        },
+        sequentialSumBlocking() {
+          if (this.busy) return;
+
+          this.runType = 'sequentialSumBlocking';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+                const result = sum_blocking(_collection);
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in sequentialSumBlocking:', error);
+            }
+            this.busy = false;
+          }, 100);
+        },
+        sequentialSumAsyncPromise() {
+          if (this.busy) return;
+
+          this.runType = 'sequentialSumAsyncPromise';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+                const result = await sum_async_promise(_collection);
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in sequentialSumAsyncPromise:', error);
+            }
+            this.busy = false;
+          }, 100);
+        },
+        parallelSumBlocking() {
+          if (this.busy) return;
+
+          this.runType = 'parallelSumBlocking';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+                const result = parallel_sum_blocking(_collection);
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in parallelSumBlocking:', error);
+            }
+            this.busy = false;
+          }, 100);
+        },
+        parallelSumAsyncPromise() {
+          if (this.busy) return;
+
+          this.runType = 'parallelSumAsyncPromise';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+                const result = await parallel_sum_async_promise(_collection);
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in parallelSumAsyncPromise:', error);
+            }
+            this.busy = false;
+          }, 100);
+        },
+        sumWebWorker() {
+          if (this.busy) return;
+
+          this.runType = 'sumWebWorker';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+
+                this.worker.postMessage({
+                  type: 'sum',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in sumWebWorker:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        async parallelSumWebWorker() {
+          if (this.busy) return;
+
+          this.runType = 'parallelSumWebWorker';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+
+                this.worker.postMessage({
+                  type: 'parallel_sum',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in parallelSumWebWorker:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        sumWebWorkerAsync() {
+          if (this.busy) return;
+
+          this.runType = 'sumWebWorkerAsync';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                const startTime = performance.now();
+
+                this.worker.postMessage({
+                  type: 'sum_async',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in sumWebWorkerAsync:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        parallelSumWebWorkerAsync() {
+          if (this.busy) return;
+
+          this.runType = 'parallelSumWebWorkerAsync';
+          this.busy = true;
+
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+
+                const startTime = performance.now();
+
+                this.worker.postMessage({
+                  type: 'parallel_sum_async',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in parallelSumWebWorkerAsync:', error);
+              this.busy = false;
+            }
+          }, 100);
+        }
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

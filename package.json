@@ -1,0 +1,22 @@
+{
+  "name": "rust-mt-wasm-vue",
+  "version": "1.0.0",
+  "description": "Rust, Multi-Threaded WebAssembly, and Vue!",
+  "scripts": {
+    "compile": "wasm-pack build --target web --out-dir src/pkg && rm src/pkg/.gitignore",
+    "start": "dotnet-serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiakkasa/rust-mt-wasm-vue.git"
+  },
+  "keywords": [],
+  "author": "Adamos Fiakkas",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fiakkasa/rust-mt-wasm-vue/issues"
+  },
+  "homepage": "https://github.com/fiakkasa/rust-mt-wasm-vue#readme",
+  "devDependencies": {}
+}
