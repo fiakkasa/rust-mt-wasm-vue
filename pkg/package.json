@@ -1,0 +1,16 @@
+{
+  "name": "mt-wasm",
+  "type": "module",
+  "version": "1.0.0",
+  "license": "MIT",
+  "files": [
+    "mt_wasm_bg.wasm",
+    "mt_wasm.js",
+    "mt_wasm.d.ts"
+  ],
+  "main": "mt_wasm.js",
+  "types": "mt_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
