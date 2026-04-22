@@ -15,7 +15,6 @@
 <body data-bs-theme="light">
   <script src="libs/vue.global.prod.min.js"></script>
   <div id="app"></div>
-  <script type="module" src="worker.js"></script>
   <script type="module">
     import init, {
       initThreadPool,
@@ -25,7 +24,8 @@
       parallel_sum_async_promise
     } from './pkg/mt_wasm.js';
 
-    const _collection = Array.from({ length: 10000 }, (_, i) => i + 1);
+    const _numberOfIterations = 1000;
+    const _collection = Array.from({ length: 999999 }, (_, i) => i + 1);
     const _numberOfThreads = Math.max(2, Math.trunc(navigator.hardwareConcurrency * 0.4));
 
     const app = Vue.createApp({
@@ -36,7 +36,7 @@
             <div class="lead flex-shrink-0 card">
               <div class="card-body d-flex flex-column gap-1">
                 <div>
-                  WASM MaxThreads: <span v-text="numberOfThreads"></span>
+                  WASM Max Threads: <span v-text="numberOfThreads"></span>
                 </div>
                 <div>
                   Web Worker WASM Max Threads: <span v-text="numberOfThreads"></span>
@@ -66,62 +66,100 @@
           </div>
           <div class="d-flex gap-3">
             <div class="actions flex-shrink-0 d-flex flex-column gap-2">
-              <div class="lead">Run Sum:</div>
+              <div class="lead">Run Test:</div>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
+                      :class="{ active: runType === 'jsSumBlocking' }"
+                      @click="jsSumBlocking" 
+                      :disabled="busy">
+                      <span>JavaScript</span>
+                      <small>Sequential Sum</small>
+                      <small>Blocking Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
+                      :class="{ active: runType === 'jsSumAsyncPromise' }"
+                      @click="jsSumAsyncPromise" 
+                      :disabled="busy">
+                      <span>JavaScript</span>
+                      <small>Sequential Sum</small>
+                      <small>Async Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'sequentialSumBlocking' }"
                       @click="sequentialSumBlocking" 
                       :disabled="busy">
-                      Sequential - Blocking
+                      <span>WASM</span>
+                      <small>Sequential Sum</small>
+                      <small>Blocking Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'sequentialSumAsyncPromise' }"
                       @click="sequentialSumAsyncPromise" 
                       :disabled="busy">
-                      Sequential - Async Promise
+                      <span>WASM</span>
+                      <small>Sequential Sum</small>
+                      <small>Async Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'parallelSumBlocking' }"
                       @click="parallelSumBlocking" 
                       :disabled="busy">
-                      Parallel - Blocking
+                      <span>WASM</span>
+                      <small>Parallel Sum</small>
+                      <small>Blocking Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'parallelSumAsyncPromise' }"
                       @click="parallelSumAsyncPromise" 
                       :disabled="busy">
-                      Parallel - Async Promise
+                      <span>WASM</span>
+                      <small>Parallel Async Sum</small>
+                      <small>Async Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'sumWebWorker' }"
                       @click="sumWebWorker" 
                       :disabled="busy || !workerStarted">
-                      Sum - Web Worker
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'parallelSumWebWorker' }"
                       @click="parallelSumWebWorker" 
                       :disabled="busy || !workerStarted">
-                      Parallel Sum - Web Worker
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'sumWebWorkerAsync' }"
                       @click="sumWebWorkerAsync" 
                       :disabled="busy || !workerStarted">
-                      Sum - Web Worker Async
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
               </button>
               <button type="button" 
-                      class="btn btn-primary mb-2" 
+                      class="btn btn-primary d-flex flex-column gap-1" 
                       :class="{ active: runType === 'parallelSumWebWorkerAsync' }"
                       @click="parallelSumWebWorkerAsync" 
                       :disabled="busy || !workerStarted">
-                      Parallel Sum - Web Worker Async
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
               </button>
             </div>
             <div class="results flex-fill d-flex flex-column gap-2 overflow-auto" 
@@ -134,6 +172,12 @@
                           v-if="hasResults"
                           :disabled="busy">
                           Clear
+                  </button>
+                  <button type="button" 
+                          class="btn btn-sm btn-warning" 
+                          @click="cancel" 
+                          v-if="busy && !abortController?.signal?.aborted">
+                          Abort
                   </button>
                 </div>
                 <div class="lead" v-for="({ time, result, iteration }) in results" :key="i + '_' + time">
@@ -154,8 +198,9 @@
           clicks: 0,
           numberOfThreads: _numberOfThreads,
           numberOfEntries: _collection.length,
-          iterations: 1500,
+          iterations: _numberOfIterations,
           /////////////////////////////////////////
+          abortController: null,
           runType: '',
           busy: false,
           results: []
@@ -173,11 +218,12 @@
         }
 
         // initialize the Web Worker for the asynchronous versions
+        window.addEventListener('beforeunload', (event) => {
+          this.worker?.terminate();
+        });
         try {
-          this.worker = new Worker(
-            new URL('./worker.js', import.meta.url),
-            { type: 'module' }
-          );
+          this.worker = new Worker('./worker.js', { type: 'module' });
+          this.worker.onerror = (error) => console.error(error);
           this.worker.onmessage = (event) => {
             try {
               const { type, source, result } = event?.data || {};
@@ -202,7 +248,9 @@
                 iteration
               });
             } finally {
-              this.busy = this.busy && this.results.length < this.iterations;
+              const done = !(this.busy && this.results.length < this.iterations);
+              this.busy = !done;
+              done && this.clearAbortController();
             }
           };
           this.worker.postMessage({
@@ -222,20 +270,109 @@
         getTime(endTime, startTime) {
           return `${(endTime - startTime).toFixed(2)} ms`;
         },
+        setAbortController() {
+          this.clearAbortController();
+          this.abortController = new AbortController();
+        },
+        clearAbortController() {
+          this.abortController?.abort();
+          this.abortController = null;
+        },
+        cancel() {
+          this.abortController?.abort();
+        },
         clearResults() {
           this.results = [];
+        },
+        jsSumBlocking() {
+          if (this.busy) return;
+
+          this.runType = 'jsSumBlocking';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
+                const startTime = performance.now();
+                const result = _collection.reduce((acc, v) => acc + v, 0);
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in jsSumBlocking:', error);
+            } finally {
+              this.busy = false;
+            }
+          }, 100);
+        },
+        jsSumAsyncPromise() {
+          if (this.busy) return;
+
+          this.runType = 'jsSumAsyncPromise';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
+                const startTime = performance.now();
+                const result = await new Promise(res =>
+                  setTimeout(() =>
+                    res(
+                      _collection.reduce(
+                        (acc, v) => acc + v,
+                        0
+                      )
+                    )
+                  )
+                );
+                const endTime = performance.now();
+
+                this.results.unshift({
+                  time: this.getTime(endTime, startTime),
+                  result,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in jsSumAsyncPromise:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
+            }
+          }, 100);
         },
         sequentialSumBlocking() {
           if (this.busy) return;
 
           this.runType = 'sequentialSumBlocking';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(() => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
                 const startTime = performance.now();
                 const result = sum_blocking(_collection);
                 const endTime = performance.now();
@@ -248,8 +385,10 @@
               }
             } catch (error) {
               console.error('Error in sequentialSumBlocking:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
             }
-            this.busy = false;
           }, 100);
         },
         sequentialSumAsyncPromise() {
@@ -257,12 +396,16 @@
 
           this.runType = 'sequentialSumAsyncPromise';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(async () => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
                 const startTime = performance.now();
                 const result = await sum_async_promise(_collection);
                 const endTime = performance.now();
@@ -275,8 +418,10 @@
               }
             } catch (error) {
               console.error('Error in sequentialSumAsyncPromise:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
             }
-            this.busy = false;
           }, 100);
         },
         parallelSumBlocking() {
@@ -284,12 +429,16 @@
 
           this.runType = 'parallelSumBlocking';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(() => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
                 const startTime = performance.now();
                 const result = parallel_sum_blocking(_collection);
                 const endTime = performance.now();
@@ -302,8 +451,10 @@
               }
             } catch (error) {
               console.error('Error in parallelSumBlocking:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
             }
-            this.busy = false;
           }, 100);
         },
         parallelSumAsyncPromise() {
@@ -311,12 +462,16 @@
 
           this.runType = 'parallelSumAsyncPromise';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(async () => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
                 const startTime = performance.now();
                 const result = await parallel_sum_async_promise(_collection);
                 const endTime = performance.now();
@@ -329,8 +484,10 @@
               }
             } catch (error) {
               console.error('Error in parallelSumAsyncPromise:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
             }
-            this.busy = false;
           }, 100);
         },
         sumWebWorker() {
@@ -338,12 +495,17 @@
 
           this.runType = 'sumWebWorker';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(() => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
                 const startTime = performance.now();
 
                 this.worker.postMessage({
@@ -364,12 +526,17 @@
 
           this.runType = 'parallelSumWebWorker';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
           setTimeout(async () => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
                 const startTime = performance.now();
 
                 this.worker.postMessage({
@@ -390,19 +557,30 @@
 
           this.runType = 'sumWebWorkerAsync';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
-          setTimeout(() => {
+          setTimeout(async () => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
                 const startTime = performance.now();
 
-                this.worker.postMessage({
-                  type: 'sum_async',
-                  collection: _collection,
-                  startTime,
-                  iteration: i + 1
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'sum_async',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
                 });
               }
             } catch (error) {
@@ -416,20 +594,30 @@
 
           this.runType = 'parallelSumWebWorkerAsync';
           this.busy = true;
-
+          this.setAbortController();
           this.clearResults();
 
-          setTimeout(() => {
+          setTimeout(async () => {
             try {
               for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
 
                 const startTime = performance.now();
 
-                this.worker.postMessage({
-                  type: 'parallel_sum_async',
-                  collection: _collection,
-                  startTime,
-                  iteration: i + 1
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'parallel_sum_async',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
                 });
               }
             } catch (error) {
