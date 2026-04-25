@@ -10,11 +10,25 @@
   <link href="style/fontawesome/css/solid.min.css" rel="stylesheet" />
   <link href="style/common.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    .actions {
+      display: grid;
+      grid-template-columns: auto auto;
+      grid-template-rows: auto;
+      height: max-content;
+    }
+
+    @media (max-width: 991px) {
+      .actions {
+        grid-template-columns: auto;
+      }
+    }
+  </style>
 </head>
 
 <body data-bs-theme="light">
   <script src="libs/vue.global.prod.min.js"></script>
-  <div id="app"></div>
+  <div id="app" class="overflow-hidden vh-100 vw-100 d-flex flex-column gap-2 p-2"></div>
   <script type="module">
     import init, {
       initThreadPool,
@@ -30,9 +44,9 @@
 
     const app = Vue.createApp({
       template: `
-        <div class="container p-4">
+        <div class="container flex-shrink-0">
           <h1 class="mb-2">Rust Wasm Multi-threading</h1>
-          <div class="d-flex gap-2 mb-2">
+          <div class="d-flex flex-column flex-md-row gap-2 mb-2">
             <div class="lead flex-shrink-0 card">
               <div class="card-body d-flex flex-column gap-1">
                 <div>
@@ -40,6 +54,9 @@
                 </div>
                 <div>
                   Web Worker WASM Max Threads: <span v-text="numberOfThreads"></span>
+                </div>
+                <div>
+                  WASM Initialized: <span v-text="wasmInitialized ? '✅' : '❌'"></span>
                 </div>
                 <div>
                   Worker Running: <span v-text="workerStarted ? '✅' : '❌'"></span>
@@ -55,137 +72,158 @@
                 The buttons below will run the same sum function with different implementations and measure the time it takes to complete.  <br />
                 The collection being summed is an array of <span v-text="numberOfEntries"></span> integers.
               </div>
+              <div class="card-footer">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        @click="clicks++">
+                        Interaction! (Clicks: <span v-text="clicks"></span>)
+                </button>
+              </div>
             </div>
           </div>
-          <div class="mb-2">
-            <button type="button" 
-                    class="btn btn-secondary" 
-                    @click="clicks++">
-                    Interaction! (Clicks: <span v-text="clicks"></span>)
-            </button>
+        </div>
+        <div class="container d-flex flex-fill gap-2 overflow-hidden">
+          <div class="actions-container flex-shrink-0 overflow-auto">
+            <div class="actions gap-2">
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'jsSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="jsSumBlockingLoopBlockingOperation" 
+                      :disabled="busy">
+                      <span>JavaScript</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'jsSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="jsSumAsyncLoopBlockingOperation" 
+                      :disabled="busy">
+                      <span>JavaScript</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Async Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmSequentialSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmSequentialSumBlockingLoopBlockingOperation" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmSequentialSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmSequentialSumAsyncLoopBlockingOperation" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Async Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmParallelSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmParallelSumBlockingLoopBlockingOperation" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Parallel Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmParallelSumAsyncLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmParallelSumAsyncLoopAsyncOperation" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Parallel Sum (Async)</small>
+                      <small>Async Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmSequentialSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmSequentialSumBlockingLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmParallelSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmParallelSumBlockingLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmSequentialSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmSequentialSumAsyncLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmParallelSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmParallelSumAsyncLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum (Blocking)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmSequentialSumAsyncLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmSequentialSumAsyncLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum (Promise)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmParallelSumAsyncLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmParallelSumAsyncLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum (Promise)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+            </div>
           </div>
-          <div class="d-flex gap-3">
-            <div class="actions flex-shrink-0 d-flex flex-column gap-2">
-              <div class="lead">Run Test:</div>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'jsSumBlocking' }"
-                      @click="jsSumBlocking" 
-                      :disabled="busy">
-                      <span>JavaScript</span>
-                      <small>Sequential Sum</small>
-                      <small>Blocking Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'jsSumAsyncPromise' }"
-                      @click="jsSumAsyncPromise" 
-                      :disabled="busy">
-                      <span>JavaScript</span>
-                      <small>Sequential Sum</small>
-                      <small>Async Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'sequentialSumBlocking' }"
-                      @click="sequentialSumBlocking" 
-                      :disabled="busy">
-                      <span>WASM</span>
-                      <small>Sequential Sum</small>
-                      <small>Blocking Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'sequentialSumAsyncPromise' }"
-                      @click="sequentialSumAsyncPromise" 
-                      :disabled="busy">
-                      <span>WASM</span>
-                      <small>Sequential Sum</small>
-                      <small>Async Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'parallelSumBlocking' }"
-                      @click="parallelSumBlocking" 
-                      :disabled="busy">
-                      <span>WASM</span>
-                      <small>Parallel Sum</small>
-                      <small>Blocking Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'parallelSumAsyncPromise' }"
-                      @click="parallelSumAsyncPromise" 
-                      :disabled="busy">
-                      <span>WASM</span>
-                      <small>Parallel Async Sum</small>
-                      <small>Async Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'sumWebWorker' }"
-                      @click="sumWebWorker" 
-                      :disabled="busy || !workerStarted">
-                      <span>WASM - Web Worker</span>
-                      <small>Sequential Sum</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'parallelSumWebWorker' }"
-                      @click="parallelSumWebWorker" 
-                      :disabled="busy || !workerStarted">
-                      <span>WASM - Web Worker</span>
-                      <small>Parallel Sum</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'sumWebWorkerAsync' }"
-                      @click="sumWebWorkerAsync" 
-                      :disabled="busy || !workerStarted">
-                      <span>WASM - Web Worker</span>
-                      <small>Sequential Sum</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
-              </button>
-              <button type="button" 
-                      class="btn btn-primary d-flex flex-column gap-1" 
-                      :class="{ active: runType === 'parallelSumWebWorkerAsync' }"
-                      @click="parallelSumWebWorkerAsync" 
-                      :disabled="busy || !workerStarted">
-                      <span>WASM - Web Worker</span>
-                      <small>Parallel Sum</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
-              </button>
-            </div>
-            <div class="results flex-fill d-flex flex-column gap-2 overflow-auto" 
-                 v-if="hasResults">
-                <div class="d-flex align-items-center gap-2">
-                  <div class="lead">Result(s):</div>
-                  <button type="button" 
-                          class="btn btn-sm btn-danger" 
-                          @click="clearResults" 
-                          v-if="hasResults"
-                          :disabled="busy">
-                          Clear
-                  </button>
-                  <button type="button" 
-                          class="btn btn-sm btn-warning" 
-                          @click="cancel" 
-                          v-if="busy && !abortController?.signal?.aborted">
-                          Abort
-                  </button>
-                </div>
-                <div class="lead" v-for="({ time, result, iteration }) in results" :key="i + '_' + time">
-                  <span v-text="iteration + '. '"></span>
-                  <span v-text="time"></span>
-                  <span v-text="', sum: ' + result"></span>
-                </div>
-            </div>
+          <div class="results flex-fill d-flex flex-column gap-2 overflow-auto" 
+                v-if="hasResults">
+              <div class="d-flex align-items-center gap-2 position-sticky sticky-top bg-body">
+                <div class="lead">Result(s):</div>
+                <button type="button" 
+                        class="btn btn-sm btn-danger" 
+                        @click="clearResults" 
+                        v-if="hasResults"
+                        :disabled="busy">
+                        Clear
+                </button>
+                <button type="button" 
+                        class="btn btn-sm btn-warning" 
+                        @click="cancel" 
+                        v-if="busy && !abortController?.signal?.aborted">
+                        Abort
+                </button>
+              </div>
+              <div class="lead" v-for="({ time, result, iteration }) in results" :key="i + '_' + time">
+                <span v-text="iteration + '. '"></span>
+                <span v-text="time"></span>
+                <span v-text="', sum: ' + result"></span>
+              </div>
           </div>
         </div>
         `,
@@ -284,10 +322,10 @@
         clearResults() {
           this.results = [];
         },
-        jsSumBlocking() {
+        jsSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'jsSumBlocking';
+          this.runType = 'jsSumBlockingLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -310,16 +348,16 @@
                 });
               }
             } catch (error) {
-              console.error('Error in jsSumBlocking:', error);
+              console.error('Error in jsSumBlockingLoopBlockingOperation:', error);
             } finally {
               this.busy = false;
             }
           }, 100);
         },
-        jsSumAsyncPromise() {
+        jsSumAsyncLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'jsSumAsyncPromise';
+          this.runType = 'jsSumAsyncLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -351,17 +389,17 @@
                 });
               }
             } catch (error) {
-              console.error('Error in jsSumAsyncPromise:', error);
+              console.error('Error in jsSumAsyncLoopBlockingOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
             }
           }, 100);
         },
-        sequentialSumBlocking() {
+        wasmSequentialSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'sequentialSumBlocking';
+          this.runType = 'wasmSequentialSumBlockingLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -384,17 +422,17 @@
                 });
               }
             } catch (error) {
-              console.error('Error in sequentialSumBlocking:', error);
+              console.error('Error in wasmSequentialSumBlockingLoopBlockingOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
             }
           }, 100);
         },
-        sequentialSumAsyncPromise() {
+        wasmSequentialSumAsyncLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'sequentialSumAsyncPromise';
+          this.runType = 'wasmSequentialSumAsyncLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -417,17 +455,17 @@
                 });
               }
             } catch (error) {
-              console.error('Error in sequentialSumAsyncPromise:', error);
+              console.error('Error in wasmSequentialSumAsyncLoopBlockingOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
             }
           }, 100);
         },
-        parallelSumBlocking() {
+        wasmParallelSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'parallelSumBlocking';
+          this.runType = 'wasmParallelSumBlockingLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -450,17 +488,17 @@
                 });
               }
             } catch (error) {
-              console.error('Error in parallelSumBlocking:', error);
+              console.error('Error in wasmParallelSumBlockingLoopBlockingOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
             }
           }, 100);
         },
-        parallelSumAsyncPromise() {
+        wasmParallelSumAsyncLoopAsyncOperation() {
           if (this.busy) return;
 
-          this.runType = 'parallelSumAsyncPromise';
+          this.runType = 'wasmParallelSumAsyncLoopAsyncOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -483,17 +521,17 @@
                 });
               }
             } catch (error) {
-              console.error('Error in parallelSumAsyncPromise:', error);
+              console.error('Error in wasmParallelSumAsyncLoopAsyncOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
             }
           }, 100);
         },
-        sumWebWorker() {
+        webWorkerWasmSequentialSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'sumWebWorker';
+          this.runType = 'webWorkerWasmSequentialSumBlockingLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -516,15 +554,15 @@
                 });
               }
             } catch (error) {
-              console.error('Error in sumWebWorker:', error);
+              console.error('Error in webWorkerWasmSequentialSumBlockingLoopBlockingOperation:', error);
               this.busy = false;
             }
           }, 100);
         },
-        async parallelSumWebWorker() {
+        async webWorkerWasmParallelSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'parallelSumWebWorker';
+          this.runType = 'webWorkerWasmParallelSumBlockingLoopBlockingOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -547,15 +585,89 @@
                 });
               }
             } catch (error) {
-              console.error('Error in parallelSumWebWorker:', error);
+              console.error('Error in webWorkerWasmParallelSumBlockingLoopBlockingOperation:', error);
               this.busy = false;
             }
           }, 100);
         },
-        sumWebWorkerAsync() {
+        webWorkerWasmSequentialSumAsyncLoopBlockingOperation() {
           if (this.busy) return;
 
-          this.runType = 'sumWebWorkerAsync';
+          this.runType = 'webWorkerWasmSequentialSumAsyncLoopBlockingOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = performance.now();
+
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'sum',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerWasmSequentialSumAsyncLoopBlockingOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        async webWorkerWasmParallelSumAsyncLoopBlockingOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerWasmParallelSumAsyncLoopBlockingOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < this.iterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = performance.now();
+
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'parallel_sum',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerWasmParallelSumAsyncLoopBlockingOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerWasmSequentialSumAsyncLoopAsyncOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerWasmSequentialSumAsyncLoopAsyncOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -584,15 +696,15 @@
                 });
               }
             } catch (error) {
-              console.error('Error in sumWebWorkerAsync:', error);
+              console.error('Error in webWorkerWasmSequentialSumAsyncLoopAsyncOperation:', error);
               this.busy = false;
             }
           }, 100);
         },
-        parallelSumWebWorkerAsync() {
+        webWorkerWasmParallelSumAsyncLoopAsyncOperation() {
           if (this.busy) return;
 
-          this.runType = 'parallelSumWebWorkerAsync';
+          this.runType = 'webWorkerWasmParallelSumAsyncLoopAsyncOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
@@ -621,7 +733,7 @@
                 });
               }
             } catch (error) {
-              console.error('Error in parallelSumWebWorkerAsync:', error);
+              console.error('Error in webWorkerWasmParallelSumAsyncLoopAsyncOperation:', error);
               this.busy = false;
             }
           }, 100);
