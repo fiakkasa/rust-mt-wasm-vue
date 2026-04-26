@@ -37,7 +37,55 @@ const initWorker = async (source, numberOfThreads) => {
     }
 };
 
-const sum = (source, data) => {
+const jsSum = (source, data) => {
+    try {
+        const { collection, startTime, iteration } = data || {};
+        const result = collection.reduce((acc, v) => acc + v, 0);
+
+        return {
+            source,
+            type: 'RESULT',
+            result,
+            startTime,
+            iteration
+        };
+    } catch (error) {
+        return {
+            source,
+            type: 'ERROR',
+            result: 0,
+            error
+        };
+    }
+};
+
+const jsSumAsync = async (source, data) => {
+    try {
+        const { collection, startTime, iteration } = data || {};
+        const result = await new Promise(res =>
+            setTimeout(() =>
+                res(collection.reduce((acc, v) => acc + v, 0))
+            )
+        );
+
+        return {
+            source,
+            type: 'RESULT',
+            result,
+            startTime,
+            iteration
+        };
+    } catch (error) {
+        return {
+            source,
+            type: 'ERROR',
+            result: 0,
+            error
+        };
+    }
+};
+
+const wasmSum = (source, data) => {
     try {
         const { collection, startTime, iteration } = data || {};
         const result = sum_blocking(collection);
@@ -59,7 +107,7 @@ const sum = (source, data) => {
     }
 };
 
-const sumAsync = async (source, data) => {
+const wasmSumAsync = async (source, data) => {
     try {
         const { collection, startTime, iteration } = data || {};
         const result = await sum_async_promise(collection);
@@ -81,7 +129,7 @@ const sumAsync = async (source, data) => {
     }
 };
 
-const parallelSum = (source, data) => {
+const wasmParallelSum = (source, data) => {
 
     try {
         const { collection, startTime, iteration } = data || {};
@@ -104,7 +152,7 @@ const parallelSum = (source, data) => {
     }
 };
 
-const parallelSumAsync = async (source, data) => {
+const wasmParallelSumAsync = async (source, data) => {
 
     try {
         const { collection, startTime, iteration } = data || {};
@@ -138,24 +186,34 @@ async function startWorker() {
                     )
                 );
                 return;
-            case 'sum':
+            case 'js_sum':
                 self.postMessage(
-                    sum(event.data.type, event.data)
+                    jsSum(event.data.type, event.data)
                 );
                 return;
-            case 'sum_async':
+            case 'js_sum_async':
                 self.postMessage(
-                    await sumAsync(event.data.type, event.data)
+                    await jsSumAsync(event.data.type, event.data)
                 );
                 return;
-            case 'parallel_sum':
+            case 'wasm_sum':
                 self.postMessage(
-                    parallelSum(event.data.type, event.data)
+                    wasmSum(event.data.type, event.data)
                 );
                 return;
-            case 'parallel_sum_async':
+            case 'wasm_sum_async':
                 self.postMessage(
-                    await parallelSumAsync(event.data.type, event.data)
+                    await wasmSumAsync(event.data.type, event.data)
+                );
+                return;
+            case 'wasm_parallel_sum':
+                self.postMessage(
+                    wasmParallelSum(event.data.type, event.data)
+                );
+                return;
+            case 'wasm_parallel_sum_async':
+                self.postMessage(
+                    await wasmParallelSumAsync(event.data.type, event.data)
                 );
                 return;
         }

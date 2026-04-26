@@ -35,6 +35,7 @@
     }
 
     @media (max-width: 767px) {
+
       .stats,
       .actions-container {
         width: auto;
@@ -59,9 +60,9 @@
       parallel_sum_async_promise
     } from './pkg/mt_wasm.js';
 
-    const _iterationIncrement = 1111;
-    const _collectionSize = 10000;
-    const _numberOfIterations = 5000;
+    const _iterationIncrement = 11111;
+    const _collectionSize = 100000;
+    const _numberOfIterations = 1500;
     const _collection = Array.from({ length: _collectionSize }, (_, i) => (i + 1) * _iterationIncrement);
     const _numberOfThreads = Math.max(2, Math.trunc(navigator.hardwareConcurrency * 0.4));
 
@@ -166,6 +167,64 @@
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmSequentialSumAsyncLoopAsyncParallelOperations' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmSequentialSumAsyncLoopAsyncParallelOperations" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Sequential Sum (Async)</small>
+                      <small>Async Iteration (Multiple)</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'wasmParallelSumAsyncLoopAsyncParallelOperations' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmParallelSumAsyncLoopAsyncParallelOperations" 
+                      :disabled="busy || !wasmInitialized">
+                      <span>WASM</span>
+                      <small>Parallel Sum (Async)</small>
+                      <small>Async Iteration (Multiple)</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerJsSequentialSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerJsSequentialSumBlockingLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>JavaScript - Web Worker</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerJsSequentialSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerJsSequentialSumAsyncLoopBlockingOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>JavaScript - Web Worker</span>
+                      <small>Sequential Sum (Blocking)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerJsSequentialSumBlockingLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerJsSequentialSumBlockingLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>JavaScript - Web Worker</span>
+                      <small>Sequential Sum (Async)</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerJsSequentialSumAsyncLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerJsSequentialSumAsyncLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>JavaScript - Web Worker</span>
+                      <small>Sequential Sum (Async)</small>
+                      <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
                       :class="[ runType === 'webWorkerWasmSequentialSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
                       @click="webWorkerWasmSequentialSumBlockingLoopBlockingOperation" 
                       :disabled="busy || !workerStarted">
@@ -202,6 +261,26 @@
                       <span>WASM - Web Worker</span>
                       <small>Parallel Sum (Blocking)</small>
                       <small>Async Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmSequentialSumBlockingLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmSequentialSumBlockingLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Sequential Sum (Async)</small>
+                      <small>Blocking Iteration</small>
+                      <small>Message Per Iteration</small>
+              </button>
+              <button type="button" 
+                      class="btn d-flex flex-column gap-1" 
+                      :class="[ runType === 'webWorkerWasmParallelSumBlockingLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="webWorkerWasmParallelSumBlockingLoopAsyncOperation" 
+                      :disabled="busy || !workerStarted">
+                      <span>WASM - Web Worker</span>
+                      <small>Parallel Sum (Async)</small>
+                      <small>Blocking Iteration</small>
                       <small>Message Per Iteration</small>
               </button>
               <button type="button" 
@@ -268,8 +347,7 @@
           runType: '',
           busy: false,
           results: [],
-          description: 
-`This is a simple example of using Multi-threading with Rust and WebAssembly.
+          description: `This is a simple example of using Multi-threading with Rust and WebAssembly.
 The buttons below will run the same sum function with different implementations and measure the time it takes to complete.
 The collection being summed is an array of incrementing integers.
 Consider using the "Interaction!" button as an indicator of the UI responsiveness.`
@@ -309,7 +387,7 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
 
               const { startTime, iteration } = event.data;
 
-              const endTime = performance.now();
+              const endTime = Date.now();
 
               this.results.unshift({
                 time: this.getTime(endTime, startTime),
@@ -336,8 +414,11 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
         }
       },
       methods: {
-        getTime(endTime, startTime) {
-          return `${(endTime - startTime).toFixed(2)} ms`;
+        getTime(endTime, startTime, comment = '') {
+          const result = endTime - startTime;
+          const value = result > 0 ? result.toFixed(0) : '< 0';
+
+          return comment ? `${value} ms ${comment}` : `${value} ms`;
         },
         setAbortController() {
           this.clearAbortController();
@@ -368,9 +449,9 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = _collection.reduce((acc, v) => acc + v, 0);
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -400,7 +481,7 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = await new Promise(res =>
                   setTimeout(() =>
                     res(
@@ -411,7 +492,7 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                     )
                   )
                 );
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -442,9 +523,9 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = sum_blocking(_collection);
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -475,9 +556,9 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = await sum_async_promise(_collection);
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -487,6 +568,84 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
               }
             } catch (error) {
               console.error('Error in wasmSequentialSumAsyncLoopAsyncOperation:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
+            }
+          }, 100);
+        },
+        wasmSequentialSumAsyncLoopAsyncParallelOperations() {
+          if (this.busy) return;
+
+          this.runType = 'wasmSequentialSumAsyncLoopAsyncParallelOperations';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              const factor = 1 / _numberOfThreads;
+              const numberOfIterations = Math.trunc(_numberOfIterations * factor);
+
+              for (let i = 0; i < numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
+                const items = Array.from({ length: _numberOfThreads }).map(() => sum_async_promise(_collection));
+                const startTime = Date.now();
+                const result = await Promise.all(items);
+                const endTime = Date.now();
+
+                for (let j = 0; j < result.length; j++) {
+                  this.results.unshift({
+                    time: this.getTime(endTime, startTime, `(total for ${items.length} operations)`),
+                    result: result[j],
+                    iteration: `${i + 1}[${j + 1}]`
+                  })
+                };
+              }
+            } catch (error) {
+              console.error('Error in wasmSequentialSumAsyncLoopAsyncParallelOperations:', error);
+            } finally {
+              this.busy = false;
+              this.clearAbortController();
+            }
+          }, 100);
+        },
+        wasmParallelSumAsyncLoopAsyncParallelOperations() {
+          if (this.busy) return;
+
+          this.runType = 'wasmParallelSumAsyncLoopAsyncParallelOperations';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              const factor = 1 / _numberOfThreads;
+              const numberOfIterations = Math.trunc(_numberOfIterations * factor);
+
+              for (let i = 0; i < numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  return;
+                }
+
+                const items = Array.from({ length: _numberOfThreads }).map(() => sum_async_promise(_collection));
+                const startTime = Date.now();
+                const result = await Promise.all(items);
+                const endTime = Date.now();
+
+                for (let j = 0; j < result.length; j++) {
+                  this.results.unshift({
+                    time: this.getTime(endTime, startTime, `(total for ${items.length} operations)`),
+                    result: result[j],
+                    iteration: `${i + 1}[${j + 1}]`
+                  })
+                };
+              }
+            } catch (error) {
+              console.error('Error in wasmParallelSumAsyncLoopAsyncParallelOperations:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
@@ -508,9 +667,9 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = parallel_sum_blocking(_collection);
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -541,9 +700,9 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
                 const result = await parallel_sum_async_promise(_collection);
-                const endTime = performance.now();
+                const endTime = Date.now();
 
                 this.results.unshift({
                   time: this.getTime(endTime, startTime),
@@ -556,6 +715,148 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
             } finally {
               this.busy = false;
               this.clearAbortController();
+            }
+          }, 100);
+        },
+        webWorkerJsSequentialSumBlockingLoopBlockingOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerJsSequentialSumBlockingLoopBlockingOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(() => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                this.worker.postMessage({
+                  type: 'js_sum',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerJsSequentialSumBlockingLoopBlockingOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerJsSequentialSumAsyncLoopBlockingOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerJsSequentialSumAsyncLoopBlockingOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'js_sum',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerJsSequentialSumAsyncLoopBlockingOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerJsSequentialSumBlockingLoopAsyncOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerJsSequentialSumBlockingLoopAsyncOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'js_sum_async',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerJsSequentialSumBlockingLoopAsyncOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerJsSequentialSumAsyncLoopAsyncOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerJsSequentialSumAsyncLoopAsyncOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                await new Promise((res) => {
+                  setTimeout(() => {
+                    this.worker.postMessage({
+                      type: 'js_sum_async',
+                      collection: _collection,
+                      startTime,
+                      iteration: i + 1
+                    });
+
+                    res(true);
+                  })
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerJsSequentialSumAsyncLoopAsyncOperation:', error);
+              this.busy = false;
             }
           }, 100);
         },
@@ -575,10 +876,10 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 this.worker.postMessage({
-                  type: 'sum',
+                  type: 'wasm_sum',
                   collection: _collection,
                   startTime,
                   iteration: i + 1
@@ -590,7 +891,7 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
             }
           }, 100);
         },
-        async webWorkerWasmParallelSumBlockingLoopBlockingOperation() {
+        webWorkerWasmParallelSumBlockingLoopBlockingOperation() {
           if (this.busy) return;
 
           this.runType = 'webWorkerWasmParallelSumBlockingLoopBlockingOperation';
@@ -598,7 +899,7 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
           this.setAbortController();
           this.clearResults();
 
-          setTimeout(async () => {
+          setTimeout(() => {
             try {
               for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
@@ -606,10 +907,10 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 this.worker.postMessage({
-                  type: 'parallel_sum',
+                  type: 'wasm_parallel_sum',
                   collection: _collection,
                   startTime,
                   iteration: i + 1
@@ -637,12 +938,12 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 await new Promise((res) => {
                   setTimeout(() => {
                     this.worker.postMessage({
-                      type: 'sum',
+                      type: 'wasm_sum',
                       collection: _collection,
                       startTime,
                       iteration: i + 1
@@ -674,12 +975,12 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 await new Promise((res) => {
                   setTimeout(() => {
                     this.worker.postMessage({
-                      type: 'parallel_sum',
+                      type: 'wasm_parallel_sum',
                       collection: _collection,
                       startTime,
                       iteration: i + 1
@@ -691,6 +992,68 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
               }
             } catch (error) {
               console.error('Error in webWorkerWasmParallelSumAsyncLoopBlockingOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerWasmSequentialSumBlockingLoopAsyncOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerWasmSequentialSumBlockingLoopAsyncOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                this.worker.postMessage({
+                  type: 'wasm_sum_async',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerWasmSequentialSumBlockingLoopAsyncOperation:', error);
+              this.busy = false;
+            }
+          }, 100);
+        },
+        webWorkerWasmParallelSumBlockingLoopAsyncOperation() {
+          if (this.busy) return;
+
+          this.runType = 'webWorkerWasmParallelSumBlockingLoopAsyncOperation';
+          this.busy = true;
+          this.setAbortController();
+          this.clearResults();
+
+          setTimeout(async () => {
+            try {
+              for (let i = 0; i < _numberOfIterations; i++) {
+                if (this.abortController?.signal?.aborted) {
+                  this.busy = false;
+                  return;
+                }
+
+                const startTime = Date.now();
+
+                this.worker.postMessage({
+                  type: 'wasm_parallel_sum_async',
+                  collection: _collection,
+                  startTime,
+                  iteration: i + 1
+                });
+              }
+            } catch (error) {
+              console.error('Error in webWorkerWasmParallelSumBlockingLoopAsyncOperation:', error);
               this.busy = false;
             }
           }, 100);
@@ -711,12 +1074,12 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 await new Promise((res) => {
                   setTimeout(() => {
                     this.worker.postMessage({
-                      type: 'sum_async',
+                      type: 'wasm_sum_async',
                       collection: _collection,
                       startTime,
                       iteration: i + 1
@@ -748,12 +1111,12 @@ Consider using the "Interaction!" button as an indicator of the UI responsivenes
                   return;
                 }
 
-                const startTime = performance.now();
+                const startTime = Date.now();
 
                 await new Promise((res) => {
                   setTimeout(() => {
                     this.worker.postMessage({
-                      type: 'parallel_sum_async',
+                      type: 'wasm_parallel_sum_async',
                       collection: _collection,
                       startTime,
                       iteration: i + 1
