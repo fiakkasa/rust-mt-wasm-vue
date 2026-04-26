@@ -6,7 +6,7 @@ This is a simple example of using Rust and Multi-Threaded WebAssembly with Vue.j
 
 - Ensure the latest NodeJS 24 LTS is available and Rust is [installed](https://rust-lang.org/tools/install/).
 - Ensure `wasm-pack` is installed or install by running: `cargo install wasm-pack`
-- Optionally ensure `dotnet-serve` is installed or install by running: `dotnet tool install dotnet-serve -g`
+- Optionally install `dotnet-serve` by running: `dotnet tool install dotnet-serve -g`
 - Build Rust by running: `npm run compile` or `wasm-pack build --target web --out-dir src/pkg`
 
 ## Building WASM with Multithreaded support

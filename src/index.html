@@ -59,8 +59,10 @@
       parallel_sum_async_promise
     } from './pkg/mt_wasm.js';
 
-    const _numberOfIterations = 1000;
-    const _collection = Array.from({ length: 999999 }, (_, i) => i + 1);
+    const _iterationIncrement = 1111;
+    const _collectionSize = 10000;
+    const _numberOfIterations = 5000;
+    const _collection = Array.from({ length: _collectionSize }, (_, i) => (i + 1) * _iterationIncrement);
     const _numberOfThreads = Math.max(2, Math.trunc(navigator.hardwareConcurrency * 0.4));
 
     const app = Vue.createApp({
@@ -83,10 +85,13 @@
                   Worker Running: <span v-text="workerStarted ? '✅' : '❌'"></span>
                 </div>
                 <div>
-                  Number of iterations: <span v-text="iterations"></span>
+                  Number of iterations: <span v-text="numberOfIterations"></span>
                 </div>
                 <div>
-                  Collection size: <span v-text="numberOfEntries"></span>
+                  Iteration increment: <span v-text="iterationIncrement"></span>
+                </div>
+                <div>
+                  Collection size: <span v-text="collectionSize"></span>
                 </div>
               </div>
             </div>
@@ -134,11 +139,11 @@
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
-                      :class="[ runType === 'wasmSequentialSumAsyncLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
-                      @click="wasmSequentialSumAsyncLoopBlockingOperation" 
+                      :class="[ runType === 'wasmSequentialSumAsyncLoopAsyncOperation' ? 'btn-info' : 'btn-outline-info' ]"
+                      @click="wasmSequentialSumAsyncLoopAsyncOperation" 
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
-                      <small>Sequential Sum (Blocking)</small>
+                      <small>Sequential Sum (Async)</small>
                       <small>Async Iteration</small>
               </button>
               <button type="button" 
@@ -205,7 +210,7 @@
                       @click="webWorkerWasmSequentialSumAsyncLoopAsyncOperation" 
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
-                      <small>Sequential Sum (Promise)</small>
+                      <small>Sequential Sum (Async)</small>
                       <small>Async Iteration</small>
                       <small>Message Per Iteration</small>
               </button>
@@ -215,7 +220,7 @@
                       @click="webWorkerWasmParallelSumAsyncLoopAsyncOperation" 
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
-                      <small>Parallel Sum (Promise)</small>
+                      <small>Parallel Sum (Async)</small>
                       <small>Async Iteration</small>
                       <small>Message Per Iteration</small>
               </button>
@@ -255,8 +260,9 @@
           /////////////////////////////////////////
           clicks: 0,
           numberOfThreads: _numberOfThreads,
-          numberOfEntries: _collection.length,
-          iterations: _numberOfIterations,
+          collectionSize: _collectionSize,
+          numberOfIterations: _numberOfIterations,
+          iterationIncrement: _iterationIncrement,
           /////////////////////////////////////////
           abortController: null,
           runType: '',
@@ -265,7 +271,8 @@
           description: 
 `This is a simple example of using Multi-threading with Rust and WebAssembly.
 The buttons below will run the same sum function with different implementations and measure the time it takes to complete.
-The collection being summed is an array of incrementing integers starting from 1.`
+The collection being summed is an array of incrementing integers.
+Consider using the "Interaction!" button as an indicator of the UI responsiveness.`
         };
       },
       async beforeMount() {
@@ -310,7 +317,7 @@ The collection being summed is an array of incrementing integers starting from 1
                 iteration
               });
             } finally {
-              const done = !(this.busy && this.results.length < this.iterations);
+              const done = !(this.busy && this.results.length < _numberOfIterations);
               this.busy = !done;
               done && this.clearAbortController();
             }
@@ -356,7 +363,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(() => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -388,7 +395,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -430,7 +437,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(() => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -453,17 +460,17 @@ The collection being summed is an array of incrementing integers starting from 1
             }
           }, 100);
         },
-        wasmSequentialSumAsyncLoopBlockingOperation() {
+        wasmSequentialSumAsyncLoopAsyncOperation() {
           if (this.busy) return;
 
-          this.runType = 'wasmSequentialSumAsyncLoopBlockingOperation';
+          this.runType = 'wasmSequentialSumAsyncLoopAsyncOperation';
           this.busy = true;
           this.setAbortController();
           this.clearResults();
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -479,7 +486,7 @@ The collection being summed is an array of incrementing integers starting from 1
                 });
               }
             } catch (error) {
-              console.error('Error in wasmSequentialSumAsyncLoopBlockingOperation:', error);
+              console.error('Error in wasmSequentialSumAsyncLoopAsyncOperation:', error);
             } finally {
               this.busy = false;
               this.clearAbortController();
@@ -496,7 +503,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(() => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -529,7 +536,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   return;
                 }
@@ -562,7 +569,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(() => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;
@@ -593,7 +600,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;
@@ -624,7 +631,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;
@@ -661,7 +668,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;
@@ -698,7 +705,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;
@@ -735,7 +742,7 @@ The collection being summed is an array of incrementing integers starting from 1
 
           setTimeout(async () => {
             try {
-              for (let i = 0; i < this.iterations; i++) {
+              for (let i = 0; i < _numberOfIterations; i++) {
                 if (this.abortController?.signal?.aborted) {
                   this.busy = false;
                   return;

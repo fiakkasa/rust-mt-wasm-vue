@@ -1,9 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export const parallel_sum_async_promise: (a: number, b: number) => any;
-export const parallel_sum_blocking: (a: number, b: number) => number;
+export const parallel_sum_blocking: (a: number, b: number) => bigint;
 export const sum_async_promise: (a: number, b: number) => any;
-export const sum_blocking: (a: number, b: number) => number;
+export const sum_blocking: (a: number, b: number) => bigint;
 export const __wbg_wbg_rayon_poolbuilder_free: (a: number, b: number) => void;
 export const initThreadPool: (a: number) => any;
 export const wbg_rayon_poolbuilder_build: (a: number) => void;

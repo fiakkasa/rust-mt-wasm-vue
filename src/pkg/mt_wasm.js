@@ -13,7 +13,7 @@ export function initThreadPool(num_threads) {
 
 /**
  * @param {Uint32Array} numbers
- * @returns {Promise<number>}
+ * @returns {Promise<bigint>}
  */
 export function parallel_sum_async_promise(numbers) {
     const ptr0 = passArray32ToWasm0(numbers, wasm.__wbindgen_malloc);
@@ -24,18 +24,18 @@ export function parallel_sum_async_promise(numbers) {
 
 /**
  * @param {Uint32Array} numbers
- * @returns {number}
+ * @returns {bigint}
  */
 export function parallel_sum_blocking(numbers) {
     const ptr0 = passArray32ToWasm0(numbers, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.parallel_sum_blocking(ptr0, len0);
-    return ret >>> 0;
+    return BigInt.asUintN(64, ret);
 }
 
 /**
  * @param {Uint32Array} numbers
- * @returns {Promise<number>}
+ * @returns {Promise<bigint>}
  */
 export function sum_async_promise(numbers) {
     const ptr0 = passArray32ToWasm0(numbers, wasm.__wbindgen_malloc);
@@ -46,13 +46,13 @@ export function sum_async_promise(numbers) {
 
 /**
  * @param {Uint32Array} numbers
- * @returns {number}
+ * @returns {bigint}
  */
 export function sum_blocking(numbers) {
     const ptr0 = passArray32ToWasm0(numbers, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.sum_blocking(ptr0, len0);
-    return ret >>> 0;
+    return BigInt.asUintN(64, ret);
 }
 
 export class wbg_rayon_PoolBuilder {
@@ -274,23 +274,28 @@ function __wbg_get_imports(memory) {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 26, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 10, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm_bindgen__convert__closures_____invoke__h67e894d93bcbc8e5);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 45, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 49, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm_bindgen__convert__closures_____invoke__ha2484a40f07cf74a);
             return ret;
         },
         __wbindgen_cast_0000000000000003: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 73, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 77, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm_bindgen__convert__closures_____invoke__h7f55de4006a9141d);
             return ret;
         },
         __wbindgen_cast_0000000000000004: function(arg0) {
             // Cast intrinsic for `F64 -> Externref`.
             const ret = arg0;
+            return ret;
+        },
+        __wbindgen_cast_0000000000000005: function(arg0) {
+            // Cast intrinsic for `U64 -> Externref`.
+            const ret = BigInt.asUintN(64, arg0);
             return ret;
         },
         __wbindgen_init_externref_table: function() {

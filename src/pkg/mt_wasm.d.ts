@@ -3,13 +3,13 @@
 
 export function initThreadPool(num_threads: number): Promise<any>;
 
-export function parallel_sum_async_promise(numbers: Uint32Array): Promise<number>;
+export function parallel_sum_async_promise(numbers: Uint32Array): Promise<bigint>;
 
-export function parallel_sum_blocking(numbers: Uint32Array): number;
+export function parallel_sum_blocking(numbers: Uint32Array): bigint;
 
-export function sum_async_promise(numbers: Uint32Array): Promise<number>;
+export function sum_async_promise(numbers: Uint32Array): Promise<bigint>;
 
-export function sum_blocking(numbers: Uint32Array): number;
+export function sum_blocking(numbers: Uint32Array): bigint;
 
 export class wbg_rayon_PoolBuilder {
     private constructor();
@@ -27,9 +27,9 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly parallel_sum_async_promise: (a: number, b: number) => any;
-    readonly parallel_sum_blocking: (a: number, b: number) => number;
+    readonly parallel_sum_blocking: (a: number, b: number) => bigint;
     readonly sum_async_promise: (a: number, b: number) => any;
-    readonly sum_blocking: (a: number, b: number) => number;
+    readonly sum_blocking: (a: number, b: number) => bigint;
     readonly __wbg_wbg_rayon_poolbuilder_free: (a: number, b: number) => void;
     readonly initThreadPool: (a: number) => any;
     readonly wbg_rayon_poolbuilder_build: (a: number) => void;
