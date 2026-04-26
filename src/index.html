@@ -118,7 +118,7 @@
                       :disabled="busy">
                       <span>JavaScript</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -127,7 +127,7 @@
                       :disabled="busy">
                       <span>JavaScript</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Async Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -136,7 +136,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -145,7 +145,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Async Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -154,7 +154,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Parallel Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -163,7 +163,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Parallel Sum (Async)</small>
-                      <small>Async Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -172,7 +172,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Async Iteration (Multiple)</small>
+                      <small>Async Iteration (Multiple Operations)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -181,7 +181,7 @@
                       :disabled="busy || !wasmInitialized">
                       <span>WASM</span>
                       <small>Parallel Sum (Async)</small>
-                      <small>Async Iteration (Multiple)</small>
+                      <small>Async Iteration (Multiple Operations)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -190,8 +190,8 @@
                       :disabled="busy || !workerStarted">
                       <span>JavaScript - Web Worker</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -200,8 +200,8 @@
                       :disabled="busy || !workerStarted">
                       <span>JavaScript - Web Worker</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -210,8 +210,8 @@
                       :disabled="busy || !workerStarted">
                       <span>JavaScript - Web Worker</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -220,8 +220,8 @@
                       :disabled="busy || !workerStarted">
                       <span>JavaScript - Web Worker</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -230,8 +230,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -240,8 +240,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Parallel Sum (Blocking)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -250,8 +250,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Sequential Sum (Blocking)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -260,8 +260,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Parallel Sum (Blocking)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -270,8 +270,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -280,8 +280,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Parallel Sum (Async)</small>
-                      <small>Blocking Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Blocking Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -290,8 +290,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Sequential Sum (Async)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
@@ -300,8 +300,8 @@
                       :disabled="busy || !workerStarted">
                       <span>WASM - Web Worker</span>
                       <small>Parallel Sum (Async)</small>
-                      <small>Async Iteration</small>
-                      <small>Message Per Iteration</small>
+                      <small>Async Iteration (Single Operation)</small>
+                      <small>Message Per Iteration (Single Operation)</small>
               </button>
             </div>
           </div>
