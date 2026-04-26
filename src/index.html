@@ -11,10 +11,18 @@
   <link href="style/common.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
-    .info,
+    .container-fluid {
+      max-width: 96rem;
+    }
+
+    .stats,
     .actions-container {
       width: 24rem;
       padding-right: 1px;
+    }
+
+    .experiments {
+      min-height: 24rem;
     }
 
     .description .card-body {
@@ -26,10 +34,10 @@
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @media (max-width: 991px) {
-      .info,
+    @media (max-width: 767px) {
+      .stats,
       .actions-container {
-        width: 16rem;
+        width: auto;
       }
 
       .actions {
@@ -41,7 +49,7 @@
 
 <body data-bs-theme="light">
   <script src="libs/vue.global.prod.min.js"></script>
-  <div id="app" class="overflow-hidden vh-100 vw-100 d-flex flex-column gap-2 p-2"></div>
+  <div id="app" class="overflow-auto vh-100 vw-100 d-flex flex-column gap-2 p-2"></div>
   <script type="module">
     import init, {
       initThreadPool,
@@ -57,10 +65,10 @@
 
     const app = Vue.createApp({
       template: `
-        <div class="container flex-shrink-0">
+        <div class="container-fluid flex-shrink-0">
           <h1 class="mb-2">Rust Wasm Multi-threading</h1>
           <div class="d-flex flex-column flex-md-row gap-2">
-            <div class="info lead flex-shrink-0 card">
+            <div class="stats lead flex-shrink-0 card">
               <div class="card-body d-flex flex-column gap-1">
                 <div>
                   WASM Max Threads: <span v-text="numberOfThreads"></span>
@@ -94,7 +102,7 @@
             </div>
           </div>
         </div>
-        <div class="container d-flex flex-fill gap-2 overflow-hidden">
+        <div class="experiments container-fluid d-flex flex-fill gap-2 overflow-hidden">
           <div class="actions-container flex-shrink-0 overflow-auto">
             <div class="actions d-grid gap-2">
               <button type="button" 
