@@ -11,16 +11,29 @@
   <link href="style/common.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
+    .info,
+    .actions-container {
+      width: 24rem;
+      padding-right: 1px;
+    }
+
+    .description .card-body {
+      max-height: 16rem;
+      white-space: pre-line;
+    }
+
     .actions {
-      display: grid;
-      grid-template-columns: auto auto;
-      grid-template-rows: auto;
-      height: max-content;
+      grid-template-columns: repeat(2, 1fr);
     }
 
     @media (max-width: 991px) {
+      .info,
+      .actions-container {
+        width: 16rem;
+      }
+
       .actions {
-        grid-template-columns: auto;
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -46,8 +59,8 @@
       template: `
         <div class="container flex-shrink-0">
           <h1 class="mb-2">Rust Wasm Multi-threading</h1>
-          <div class="d-flex flex-column flex-md-row gap-2 mb-2">
-            <div class="lead flex-shrink-0 card">
+          <div class="d-flex flex-column flex-md-row gap-2">
+            <div class="info lead flex-shrink-0 card">
               <div class="card-body d-flex flex-column gap-1">
                 <div>
                   WASM Max Threads: <span v-text="numberOfThreads"></span>
@@ -64,14 +77,13 @@
                 <div>
                   Number of iterations: <span v-text="iterations"></span>
                 </div>
+                <div>
+                  Collection size: <span v-text="numberOfEntries"></span>
+                </div>
               </div>
             </div>
-            <div class="card flex-fill">
-              <div class="card-body lead">
-                This is a simple example of using Multi-threading with Rust and WebAssembly. <br />
-                The buttons below will run the same sum function with different implementations and measure the time it takes to complete.  <br />
-                The collection being summed is an array of <span v-text="numberOfEntries"></span> integers.
-              </div>
+            <div class="description card flex-fill">
+              <div class="card-body lead overflow-auto" v-text="description"></div>
               <div class="card-footer">
                 <button type="button" 
                         class="btn btn-secondary" 
@@ -84,7 +96,7 @@
         </div>
         <div class="container d-flex flex-fill gap-2 overflow-hidden">
           <div class="actions-container flex-shrink-0 overflow-auto">
-            <div class="actions gap-2">
+            <div class="actions d-grid gap-2">
               <button type="button" 
                       class="btn d-flex flex-column gap-1" 
                       :class="[ runType === 'jsSumBlockingLoopBlockingOperation' ? 'btn-info' : 'btn-outline-info' ]"
@@ -241,7 +253,11 @@
           abortController: null,
           runType: '',
           busy: false,
-          results: []
+          results: [],
+          description: 
+`This is a simple example of using Multi-threading with Rust and WebAssembly.
+The buttons below will run the same sum function with different implementations and measure the time it takes to complete.
+The collection being summed is an array of incrementing integers starting from 1.`
         };
       },
       async beforeMount() {
