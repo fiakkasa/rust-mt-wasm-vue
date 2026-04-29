@@ -37,10 +37,10 @@ export interface InitOutput {
     readonly wbg_rayon_poolbuilder_numThreads: (a: number) => number;
     readonly wbg_rayon_poolbuilder_receiver: (a: number) => number;
     readonly wbg_rayon_start_worker: (a: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__ha2484a40f07cf74a: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h84872973215c14dc: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h67e894d93bcbc8e5: (a: number, b: number, c: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h7f55de4006a9141d: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__hacc62a3928f866e9: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h4b9bff116613a70d: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__hc620886e27223b13: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h63d2823370e39876: (a: number, b: number, c: any) => void;
     readonly memory: WebAssembly.Memory;
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;

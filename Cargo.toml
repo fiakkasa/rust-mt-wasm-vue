@@ -1,6 +1,6 @@
 [package]
 name = "mt-wasm"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 license = "MIT"
 
@@ -9,6 +9,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 wasm-bindgen = "0.2"
-rayon = "1.8"
+rayon = "1.12.0"
 wasm-bindgen-rayon = { version = "1.3", features = ["no-bundler"] }
-wasm-bindgen-futures = "0.4.68"
+wasm-bindgen-futures = "0.4.70"
